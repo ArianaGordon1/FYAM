@@ -810,10 +810,52 @@ tabs.forEach(tab => tab.addEventListener('click', () => {
   document.getElementById('interest').innerHTML = '<option>All services</option><option>Ride hailing</option><option>Food delivery</option><option>Home services</option><option>FYAM Pay</option><option>Vendor marketplace</option><option>FYAM AI</option>';
 }));
 
-document.getElementById('smartForm').addEventListener('submit', e => {
+const SUPABASE_URL = "https://okpkyebkasuwllpkyvda.supabase.co";
+const SUPABASE_KEY = "sb_publishable_jtdJnFHBzEPPEBWo3l5wDg_6O4AA4xb";
+
+document.getElementById('smartForm').addEventListener('submit', async e => {
   e.preventDefault();
+
   const form = e.currentTarget;
-  if (!form.checkValidity()) { form.reportValidity(); return; }
+  if (!form.checkValidity()) {
+    form.reportValidity();
+    return;
+  }
+
+  const activeTab = document.querySelector('.tab.active')?.dataset.form || 'user';
+  const formData = new FormData(form);
+
+  const payload = {
+    name: `${formData.get('firstName')} ${formData.get('lastName')}`,
+    email: formData.get('email'),
+    phone: formData.get('phone'),
+    role: activeTab
+  };
+
+  const button = form.querySelector('.submitBtn');
+  button.textContent = 'Submitting...';
+  button.disabled = true;
+
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  button.disabled = false;
+  button.textContent = 'Submit smart FYAM interest';
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    alert('Submission failed: ' + errorText);
+    return;
+  }
+
   document.getElementById('modal').classList.add('show');
   form.reset();
 });
